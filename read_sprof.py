@@ -17,43 +17,36 @@ from datetime import datetime,timedelta
 
 
 base_directory='/home/rvalenzuela/SPROF/matfiles'
-
+reqdates={	'3': {'ini':[2001,1,23,21],'end':[2001,1,24,1]},
+			'7': {'ini':[2001,2,17,17],'end':[2001,2,17,19]},
+			'13': {'ini':[2004,2,16,0],'end':[2004,2,18,23]},
+			'14': {'ini':[2004,2,25,0],'end':[2004,2,26,0]}
+			}
 
 def main():
 
+	casenum = raw_input('\nIndicate case number (i.e. 1): ')
+	sprof_files =get_filenames(casenum)
 
-	# case='03'
-
-
-
-	sprof_files =get_filenames('3')
-	mat={}
-	dayt={}
-	dbz={}
-	vvel={}
 	if len(sprof_files)>1:
 
 		for k,s in enumerate(sprof_files):
-			# # mat1=sio.loadmat('/home/raul/Desktop/SPROF/czc_cal_sprof_01023_120gates.mat')
-			# # mat2=sio.loadmat('/home/raul/Desktop/SPROF/czc_cal_sprof_01024_120gates.mat')
-			# mat1=sio.loadmat('/home/raul/Desktop/SPROF/czc_cal_sprof_01048_120gates.mat')
-			# mat2=sio.loadmat('/home/raul/Desktop/SPROF/czc_cal_sprof_01049_120gates.mat')
-
-
-			mat[k]=sio.loadmat(s)
-			ht=mat[k]['czc_sprof_ht'][0]
-			daytin=mat[k]['czc_sprof_dayt']
-			dayt[k]=np.asarray([datenum_to_datetime(x) for x in daytin])
-			dbz[k]=mat[k]['czc_sprof_dbz']
-			vvel[k]=mat[k]['czc_sprof_vvel']
-
-		dayt=np.hstack((dayt[0],dayt[1]))
-		dbz=np.hstack((dbz[0].T,dbz[1].T))
-		vvel=np.hstack((vvel[0].T,vvel[1].T))
-
+			mat=sio.loadmat(s)
+			ht=mat['czc_sprof_ht'][0]
+			
+			if k==0:
+				dyt=[datenum_to_datetime(x) for x in mat['czc_sprof_dayt']]
+				dayt=np.asarray(dyt)	
+				dbz=mat['czc_sprof_dbz'].T
+				vvel=mat['czc_sprof_vvel'].T
+			else:
+				dyt=np.asarray([datenum_to_datetime(x) for x in mat['czc_sprof_dayt']])
+				dayt=np.hstack((dayt, dyt))
+				dbz=np.hstack((dbz, mat['czc_sprof_dbz'].T))
+				vvel=np.hstack((vvel, mat['czc_sprof_vvel'].T))
+				
 	else:
 		mat=sio.loadmat(sprof_files[0])
-
 		ht=mat['czc_sprof_ht'][0]
 		dayt=mat['czc_sprof_dayt']
 		dayt = np.asarray([datenum_to_datetime(x) for x in dayt])
@@ -62,15 +55,17 @@ def main():
 
 	extent=[0, len(dayt), 0, len(ht)]
 
-	for t in dayt:
-		print t.strftime('%d %H:%M:%S')
-
-	idx_st=find_index(dayt,[2001,1,23,21])
-	idx_end=find_index(dayt,[2001,1,24,1])
-	# idx_st=find_index(dayt,[2001,2,17,17])
-	# idx_end=find_index(dayt,[2001,2,17,19])
+	try:
+		idx_st=find_index(dayt,reqdates[casenum]['ini'])
+		idx_end=find_index(dayt,reqdates[casenum]['end'])
+	except KeyError:
+		idx_st=0
+		idx_end=len(dayt)-1
 
 	fig,ax=plt.subplots(2,1,sharex=True)
+
+	'''Plot Reflectivity
+	*****************'''
 	im0=ax[0].imshow(dbz,origin='lower',
 						interpolation='nearest',
 						aspect='auto',
@@ -85,7 +80,8 @@ def main():
 					weight='bold',
 					transform = ax[0].transAxes)
 
-
+	'''Plot Vertical Velocity
+	************************'''
 	im1=ax[1].imshow(vvel,origin='lower',
 						interpolation='none',
 						extent=extent,
@@ -100,6 +96,7 @@ def main():
 				weight='bold',
 				transform = ax[1].transAxes)
 
+	' set time limits (zoom)'
 	ax[0].set_xlim([idx_st,idx_end])
 
 	fig.subplots_adjust(hspace=.07)	
