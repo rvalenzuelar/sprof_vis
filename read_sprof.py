@@ -2,6 +2,7 @@
 
 	Raul Valenzuela
 	November, 2015
+	raul.valenzuela@colorado.edu	
 """
 
 import scipy.io as sio
