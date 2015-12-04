@@ -1,4 +1,4 @@
-""" Read NOAA S-profiler radar
+""" Read NOAA S-profiler radar in matlab format
 
 	Raul Valenzuela
 	November, 2015

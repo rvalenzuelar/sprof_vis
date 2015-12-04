@@ -17,7 +17,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MultipleLocator
 from scipy.interpolate import interp1d
 from datetime import datetime,timedelta
-
+from common import find_index
 
 base_directory='/home/rvalenzuela/SPROF/matfiles'
 
@@ -25,8 +25,8 @@ base_directory='/home/rvalenzuela/SPROF/matfiles'
 	reqdates = [yyyy, m, d, H]'''
 reqdates={ '1': {'ini':[1998,1,18,14],'end':[1998,1,19,23]},
 			'2': {'ini':[1998,1,26,0],'end':[1998,1,27,4]},
-			# '3': {'ini':[2001,1,23,21],'end':[2001,1,24,1]},
-			# '7': {'ini':[2001,2,17,17],'end':[2001,2,17,19]},
+			'3': {'ini':[2001,1,23,21],'end':[2001,1,24,1]},
+			'7': {'ini':[2001,2,17,17],'end':[2001,2,17,19]},
 			'9': {'ini':[2003,1,21,0],'end':[2003,1,23,5]},
 			'13': {'ini':[2004,2,17,12],'end':[2004,2,18,0]},
 			'14': {'ini':[2004,2,25,0],'end':[2004,2,26,0]}
@@ -45,13 +45,14 @@ def main():
 
 	extent=[0, len(dayt), 0, len(ht)]
 
-	' set index for time zooming'
+	''' set index for time zooming '''
 	try:
 		idx_st=find_index(dayt,reqdates[casenum]['ini'])
 		idx_end=find_index(dayt,reqdates[casenum]['end'])
 	except KeyError:
 		idx_st=0
 		idx_end=len(dayt)-1
+
 
 	''' Precipitation partition 
 	**************************'''
@@ -94,12 +95,13 @@ def main():
 			ax[0].text(idx_bbht[n], -5, s[0][0].upper(), horizontalalignment='center',clip_on=True)
 	ax[1].plot(idx_bbht, f(bbht),marker='o',linestyle='--',color='black')
 
+	' it has to be before set_xlim'
+	format_xaxis(ax[1],dayt,2,casenum)
 
 	ax[0].set_xlim([idx_st,idx_end])
 	ax[0].set_ylim([-10,len(ht)])
 	ax[1].set_ylim([-10,len(ht)])
 
-	format_xaxis(ax[1],dayt,2,casenum)
 
 	fig.subplots_adjust(hspace=.07)	
 	
@@ -154,28 +156,7 @@ def plot_velocity(ax,vvel,ht, **kwargs):
 				weight='bold',
 				transform = ax.transAxes)
 
-def find_index(datetime_array, t):
 
-	idx=[[]]
-	sec=0
-	mnt=0
-	
-	if len(t)==4:
-		mnt=0
-	elif len(t)==5:		
-		mnt=t[4]
-
-	while not idx[0]:
-		idx = np.where(datetime_array == datetime(t[0], t[1], t[2], t[3], mnt, sec))
-		sec+=1
-		if sec==60:
-			mnt+=1
-			sec=0
-		if mnt==60:
-			mnt=0
-			t[3]+=1
-
-	return idx[0][0]
 
 def format_xaxis(ax,time,freq_hr,casenum):
 

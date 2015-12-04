@@ -1,4 +1,4 @@
-""" Read  S-profiler radar precipitation partition
+""" Read NOAA S-profiler radar precipitation partition
 
 	Raul Valenzuela
 	December, 2015
@@ -6,6 +6,7 @@
 """
 
 import scipy.io as sio
+from common import datenum_to_datetime
 
 from datetime import datetime,timedelta
 
@@ -78,22 +79,4 @@ class partition(object):
 		precip = mat['czc_sprof_rtype_precip'][0]
 		return precip
 
-def datenum_to_datetime(datenum):
-    """
-    Convert Matlab datenum into Python datetime.
-    :param datenum: Date in datenum format
-    :return:        Datetime object corresponding to datenum.
-
-    source: https://gist.github.com/vicow
-    """
-    days = datenum % 1
-    hours = days % 1 * 24
-    minutes = hours % 1 * 60
-    seconds = minutes % 1 * 60
-    return datetime.fromordinal(int(datenum)) \
-           + timedelta(days=int(days)) \
-           + timedelta(hours=int(hours)) \
-           + timedelta(minutes=int(minutes)) \
-           + timedelta(seconds=round(seconds)) \
-           - timedelta(days=366)
 
