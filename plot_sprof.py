@@ -17,7 +17,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MultipleLocator
 from scipy.interpolate import interp1d
 from datetime import datetime,timedelta
-from common import find_index
+from common import find_index,  format_yaxis
 
 base_directory='/home/rvalenzuela/SPROF/matfiles'
 
@@ -187,17 +187,6 @@ def format_xaxis(ax,time,freq_hr,casenum):
 
 	ax.set_xticks(new_xticks)
 	ax.set_xticklabels(xtlabel)
-
-def format_yaxis(ax,hgt):
-	
-	f = interp1d(hgt,range(len(hgt)))
-	
-	ys=np.arange(1.,8.)
-	new_yticks = f(ys)
-	ytlabel = ['{:2.1f}'.format(y) for y in ys]
-	ax.set_yticks(new_yticks)
-	ax.set_yticklabels(ytlabel)
-
 
 
 def time_period(start, end, delta):
