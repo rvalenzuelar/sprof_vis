@@ -85,7 +85,7 @@ def main():
 	orig_cmap = cm.bwr
 	shifted_cmap = shiftedColorMap(orig_cmap, midpoint=0.7, name='shifted')
 
-	' add images'
+	' add images and colorbar'
 	im0= ax0.imshow(dbz,interpolation='none',cmap='nipy_spectral',vmin=-20,vmax=60,aspect='auto',origin='lower')
 	im1= ax1.imshow(vvel,interpolation='none',cmap=shifted_cmap,vmin=-10,vmax=4,aspect='auto',origin='lower')
 	
