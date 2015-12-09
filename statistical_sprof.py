@@ -10,6 +10,7 @@ import read_sprof
 import numpy as np
 import matplotlib.gridspec as gridspec
 import matplotlib.cm as cm 
+import seaborn as sns
 
 from common import find_index, format_yaxis, format_xaxis, shiftedColorMap
 from scipy import fftpack
@@ -20,7 +21,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 
 base_directory='/home/rvalenzuela/SPROF/matfiles'
-casenum = raw_input('\nIndicate case number (i.e. 1): ')
 
 reqdates={ '1': {'ini':[1998,1,18,16],'end':[1998,1,18,19]},
 			'2': {'ini':[1998,1,26,4],'end':[1998,1,26,14]},
@@ -35,32 +35,58 @@ reqdates={ '1': {'ini':[1998,1,18,16],'end':[1998,1,18,19]},
 			}
 
 def main():
-	dbz,vvel, ht, dayt = read_sprof.retrieve_arrays(base_directory, casenum)
 
-	idx_st=find_index(dayt,reqdates[casenum]['ini'])
-	idx_end=find_index(dayt,reqdates[casenum]['end'])
+	# casenum = raw_input('\nIndicate case number (i.e. 1): ')
+	# dbz,vvel,ht,ts,ts2 = get_arrays(casenum)
+	# plot_turbulence_spectra(dbz,vvel,ts,ts2,ht,dayt)
 
-	dayt=dayt[idx_st:idx_end]
-	vvel=vvel[:,idx_st:idx_end]
-	dbz=dbz[:,idx_st:idx_end]
+	dbz,vvel,ht,ts,ts2 = get_arrays('3')
+	ax=plot_profile_variance(dbz,vvel,ht,False)
+	dbz,vvel,ht,ts,ts2 = get_arrays('7')
+	plot_profile_variance(dbz,vvel,ht,ax)
+	plt.show(block=False)
 
-	vvel[vvel<=-10.]=np.nan
-	vvel[vvel>=4.]=np.nan
+def plot_profile_variance(dbz,vvel,ht, ax):
 
-	' add total seconds to array'
-	ts=[]
-	for d in dayt:
-		ts.append((d-dayt[0]).total_seconds())
+	dbz_variance=[]
+	vvel_variance=[]
+	count_gates=[]
+	# global ln1
+	# global ln2
+	for i in range(len(ht)):
+		dbz_variance.append(np.nanvar(dbz[i,:]))
+		vvel_variance.append(np.nanvar(vvel[i,:]))
+		count_gates.append(vvel[i,:].size-np.sum(np.isnan(vvel[i,:])))
 
-	' create equally spaced time grid '
-	day = dayt[0]
-	end = dayt[-1]
-	step = timedelta(seconds=40)
-	ts2 = []
-	while day < end:
-		result=(day-dayt[0]).total_seconds()
-		ts2.append(result)
-		day += step
+	if np.any(ax):
+		ax[0].plot(dbz_variance,ht)
+		ax[1].plot(vvel_variance,ht)
+		ax[2].plot(count_gates,ht,label='case 7')
+		ax[2].legend()
+	else:
+		fig,ax=plt.subplots(1,3,sharey=True,figsize=(10,8))
+		ax[0].plot(dbz_variance,ht)
+		ax[1].plot(vvel_variance,ht)
+		ax[2].plot(count_gates,ht,label='case 3')
+
+		ax[0].set_ylabel('Height MSL [km]')
+		ax[0].set_xlabel('Reflectivity [dBZ^2]')
+		ax[1].set_xlabel('Vertical velocity [m2 s^-2]')
+		ax[2].set_xlabel('Count good gates')
+		ax[2].legend()
+		return ax
+	in1 =datetime(*(reqdates['3']['ini']+[0,0]))
+	en1=datetime(*(reqdates['3']['end']+[0,0]))
+	in2=datetime(*(reqdates['7']['ini']+[0,0]))
+	en2=datetime(*(reqdates['7']['end']+[0,0]))
+	t1='\nCase 3: '+in1.strftime('%Y-%b %dT%H:%M')+en1.strftime(' - %dT%H:%M UTC')
+	t2='\nCase 7: '+in2.strftime('%Y-%b %dT%H:%M')+en2.strftime(' - %dT%H:%M UTC')
+	plt.suptitle('SPROF time variance'+t1+t2)
+	plt.subplots_adjust(wspace=0.05)
+	plt.draw()
+
+
+def plot_turbulence_spectra(dbz,vvel,ts,ts2,ht,dayt):
 
 	' setup new figure '	
 	fig = plt.figure(figsize=(8,10))
@@ -125,7 +151,6 @@ def main():
 		variance=np.nanvar(trace_doppler)
 		ax2.text(0.2, variance_y[n], 'Variance: '+'{:3.2f}'.format(variance), 
 					color=colors[n], transform=ax2.transAxes)
-		
 
 		' create interpolant with regular time grid of 40 seconds'
 		asd = check_trace(trace_doppler)
@@ -146,7 +171,6 @@ def main():
 	format_xaxis(ax1, dayt, freqMinutes=60,labels=False )
 	format_xaxis(ax2, dayt, freqMinutes=60,labels=True )
 
-
 	ax0.set_ylabel('Hgt MSL [km]')
 	ax1.set_ylabel('Hgt MSL [km]')
 	ax2.set_ylabel('VVel [ms^-1]')
@@ -165,11 +189,9 @@ def main():
 	plt.suptitle('SPROF observations. Date: '+dayt[0].strftime('%Y-%b'))
 	plt.draw()
 
-	plt.show(block=False)
 
 
 def power_spectrum(ax,array,color,linestyle,marker):
-
 
 	F1 = fftpack.fft(array)
 	cut_half = int(len(array)/2)
@@ -200,6 +222,37 @@ def power_spectrum(ax,array,color,linestyle,marker):
 	ax.set_ylabel('2|F|^2')
 	ax.legend(handles=ln)
 	plt.draw
+
+def get_arrays(casenum):
+
+	dbz,vvel, ht, dayt = read_sprof.retrieve_arrays(base_directory, casenum)
+
+	idx_st=find_index(dayt,reqdates[casenum]['ini'])
+	idx_end=find_index(dayt,reqdates[casenum]['end'])
+
+	dayt=dayt[idx_st:idx_end]
+	vvel=vvel[:,idx_st:idx_end]
+	dbz=dbz[:,idx_st:idx_end]
+
+	vvel[vvel<=-10.]=np.nan
+	vvel[vvel>=4.]=np.nan
+
+	' add total seconds to array'
+	ts=[]
+	for d in dayt:
+		ts.append((d-dayt[0]).total_seconds())
+
+	' create equally spaced time grid '
+	day = dayt[0]
+	end = dayt[-1]
+	step = timedelta(seconds=40)
+	ts2 = []
+	while day < end:
+		result=(day-dayt[0]).total_seconds()
+		ts2.append(result)
+		day += step
+
+	return dbz,vvel,ht,ts,ts2
 
 def decimalf(x,pos):
 	return '%2.0f' % x
