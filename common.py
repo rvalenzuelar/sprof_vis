@@ -94,11 +94,14 @@ def format_xaxis(ax,time,**kwargs):
 
 def format_yaxis(ax,hgt):
 	
+	hgt_res = np.unique(np.diff(hgt))[0]
+	belowrad_gates = np.arange(hgt[0]-hgt_res, 0, -hgt_res)
 	f = interp1d(hgt,range(len(hgt)))
-	
-	ys=np.arange(1.,8.)
+	ys=np.arange(np.ceil(hgt[0]), np.floor(hgt[-1])+1)
 	new_yticks = f(ys)
-	ytlabel = ['{:2.1f}'.format(y) for y in ys]
+	# ytlabel = ['{:2.1f}'.format(y) for y in ys]
+	ytlabel = ['{:g}'.format(y) for y in ys]
+	ax.set_ylim([-len(belowrad_gates), len(hgt)])
 	ax.set_yticks(new_yticks)
 	ax.set_yticklabels(ytlabel)	
 
