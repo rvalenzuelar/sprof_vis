@@ -57,39 +57,47 @@ def find_index(datetime_array, t):
 
 def format_xaxis(ax,time,**kwargs):
 
-	freqMin=kwargs['freqMinutes']
+	freqMin=kwargs['minutes_tick']
 	labels=kwargs['labels']
-
+	# print time
 	date_fmt='%d\n%H'
 	xtlabel=[]
 	new_xticks=[]
 
-	asd = [np.mod(d.minute, freqMin) for d in time]
-	asd=np.asarray(asd)
-	
-	'1998 data has no constant time step so this fix it'
-	if time[0].year == 1998:
-		idx = np.where((asd==0) | (asd==1))[0]
-	else:
-		idx = np.where(asd==0)[0]
-
-	for n, i in enumerate(idx):
-		tstr=time[i].strftime(date_fmt)
-		if n==0:
-			new_xticks.append(i)
-			if labels:
-				xtlabel.append(tstr)
-			else:
-				xtlabel.append('')			
+	' identifies beginning of hours '
+	d0=time[0].hour
+	hrbool=[True]
+	for d in time[1:]:
+		if d.hour == d0:
+			hrbool.append(False)
 		else:
-			if i>idx[n-1]+1:
-				new_xticks.append(i)
-				if labels:
-					xtlabel.append(tstr)
-				else:
-					xtlabel.append('')
+			hrbool.append(True)
+			d0=d.hour
+	idxhr = np.where(hrbool)[0]
 
-	ax.set_xticks(new_xticks)
+	if time[0].year == 1998:
+		choose=[0,1,2]
+	else:
+		choose=[0]
+	mntbool=[True]
+	for n, d in enumerate(time[1:]):
+		mod=np.mod(d.minute,freqMin)
+		if mod in choose and mntbool[n]==False:
+			mntbool.append(True)
+		else:
+			mntbool.append(False)
+			
+	idxmnt = np.where(mntbool)[0]
+
+	for n, i in enumerate(idxmnt):
+		if i in idxhr:
+			tstr=time[i].strftime(date_fmt)
+			xtlabel.append(tstr)
+		else:
+			xtlabel.append('')
+
+	ax.set_xlim([0, len(time)])
+	ax.set_xticks(idxmnt)
 	ax.set_xticklabels(xtlabel)
 
 def format_yaxis(ax,hgt):
