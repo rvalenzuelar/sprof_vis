@@ -89,20 +89,28 @@ def format_xaxis(ax,time,**kwargs):
 			
 	idxmnt = np.where(mntbool)[0]
 
-	for n, i in enumerate(idxmnt):
-		if i in idxhr:
-			tstr=time[i].strftime(date_fmt)
-			xtlabel.append(tstr)
-		else:
-			xtlabel.append('')
+	if labels:
+		for n, i in enumerate(idxmnt):	
+				if i in idxhr:
+					tstr=time[i].strftime(date_fmt)
+					xtlabel.append(tstr)
+				else:
+					xtlabel.append('')
+	else:
+		[xtlabel.append('') for i in idxmnt]
 
 	ax.set_xlim([0, len(time)])
 	ax.set_xticks(idxmnt)
 	ax.set_xticklabels(xtlabel)
 
-def format_yaxis(ax,hgt):
+def format_yaxis(ax,hgt,**kwargs):
 	
 	hgt_res = np.unique(np.diff(hgt))[0]
+	if 'toplimit' in kwargs:
+		toplimit=kwargs['toplimit']
+		''' extentd hgt to toplimit km so all 
+		time-height sections have a common yaxis'''
+		hgt=np.arange(hgt[0],toplimit, hgt_res)
 	belowrad_gates = np.arange(hgt[0]-hgt_res, 0, -hgt_res)
 	f = interp1d(hgt,range(len(hgt)))
 	ys=np.arange(np.ceil(hgt[0]), np.floor(hgt[-1])+1)
