@@ -6,8 +6,9 @@
 """
 
 import scipy.io as sio
-from common import datenum_to_datetime
+import numpy as np
 
+from common import datenum_to_datetime, find_index
 from datetime import datetime,timedelta
 
 
@@ -31,11 +32,15 @@ class partition(object):
 		rtype = mat['czc_sprof_rtype'][0]
 		return rtype
 
-	def get_bbht(self):
+	def get_bbht(self,**kwargs):
 
 		mat=sio.loadmat(self.pfile)
 		bbht = mat['czc_sprof_rtype_bbht'][0]
-		return bbht
+		if 'time' in kwargs:
+			idx, time_idx = self.get_index(kwargs['time'])
+			return bbht[idx], time_idx
+		else:
+			return bbht
 
 	def get_begdayt(self):
 
@@ -79,4 +84,25 @@ class partition(object):
 		precip = mat['czc_sprof_rtype_precip'][0]
 		return precip
 
+	def get_index(self,time):
 
+		begdayt=self.get_begdayt()
+		enddayt=self.get_enddayt()
+
+		beg_aux = np.asarray([datetime(t.year, t.month, t.day, t.hour,0,0) for t in begdayt])
+		end_aux = np.asarray([datetime(t.year, t.month, t.day, t.hour,0,0) for t in enddayt])
+		dayt_aux=np.asarray([datetime(t.year, t.month, t.day, t.hour,0,0) for t in time])
+
+		beg_index = np.where(beg_aux==dayt_aux[0])[0][0]
+		end_index = np.where(end_aux==dayt_aux[-1])[0][1]
+
+		begdayt = begdayt[beg_index:end_index]
+		enddayt = enddayt[beg_index:end_index]
+
+		beg = [[t.year, t.month, t.day, t.hour,t.minute] for t in begdayt]
+		idx_be=np.asarray([find_index(time, x) for x in beg])
+		end = [[t.year, t.month, t.day, t.hour,t.minute] for t in enddayt]
+		idx_en=np.asarray([find_index(time, x) for x in end])
+		idx_bbht=(idx_be+idx_en)/2
+
+		return range(beg_index,end_index), idx_bbht
