@@ -17,7 +17,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.ticker import MultipleLocator
 from scipy.interpolate import interp1d
 from datetime import datetime,timedelta
-from common import find_index,  format_yaxis
+from common import find_index,  format_yaxis, format_xaxis
 
 base_directory='/home/rvalenzuela/SPROF/matfiles'
 
@@ -27,7 +27,9 @@ reqdates={ '1': {'ini':[1998,1,18,14],'end':[1998,1,19,23]},
 			'2': {'ini':[1998,1,26,0],'end':[1998,1,27,4]},
 			'3': {'ini':[2001,1,23,21],'end':[2001,1,24,1]},
 			'7': {'ini':[2001,2,17,17],'end':[2001,2,17,19]},
+			'8': {'ini':[2003,1,12,0],'end':[2003,1,13,0]},
 			'9': {'ini':[2003,1,21,0],'end':[2003,1,23,5]},
+			'11': {'ini':[2004,1,9,0],'end':[2004,1,10,0]},
 			'13': {'ini':[2004,2,17,12],'end':[2004,2,18,0]},
 			'14': {'ini':[2004,2,25,0],'end':[2004,2,26,0]}
 			}
@@ -96,7 +98,8 @@ def main():
 	ax[1].plot(idx_bbht, f(bbht),marker='o',linestyle='--',color='black')
 
 	' it has to be before set_xlim'
-	format_xaxis(ax[1],dayt,2,casenum)
+	# format_xaxis(ax[1],dayt,2,casenum)
+	format_xaxis(ax[1],dayt,minutes_tick=60,labels=True)
 
 	ax[0].set_xlim([idx_st,idx_end])
 	ax[0].set_ylim([-10,len(ht)])
@@ -155,38 +158,6 @@ def plot_velocity(ax,vvel,ht, **kwargs):
 	ax.text(0.05, 0.9, 'Vertical Velocity [ms-1]',
 				weight='bold',
 				transform = ax.transAxes)
-
-
-
-def format_xaxis(ax,time,freq_hr,casenum):
-
-	date_fmt='%d\n%H'
-	xtlabel=[]
-	new_xticks=[]
-	idx_old=0
-	n=0
-
-	'1998 data has no constant time step so this fix it'
-	if casenum in ['1','2']:
-		mnt1=[0,1,2]
-		mnt2=[0,1]
-	else:
-		mnt1=[0]
-		mnt2=[0]
-
-	for idx,t in enumerate(time):
-		tstr=t.strftime(date_fmt)
-		if np.mod(t.hour,freq_hr) == 0 and t.minute in mnt1 and tstr not in xtlabel:
-			xtlabel.append(t.strftime(date_fmt))
-			new_xticks.append(idx)
-			n+=1
-		elif np.mod(t.minute,30) in mnt2 and idx != new_xticks[n-1]+1:
-			xtlabel.append('')
-			new_xticks.append(idx)
-			n+=1
-
-	ax.set_xticks(new_xticks)
-	ax.set_xticklabels(xtlabel)
 
 
 def time_period(start, end, delta):
