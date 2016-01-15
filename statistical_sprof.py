@@ -13,8 +13,9 @@ import matplotlib.cm as cm
 # import seaborn as sns 
 import read_partition
 import matplotlib
+import plotPrecip as precip
 
-from common import find_index, format_yaxis, format_xaxis, shiftedColorMap
+from common import find_index, format_yaxis, format_xaxis, shiftedColorMap, is_numeric
 from scipy import fftpack
 from scipy.interpolate import interp1d
 from datetime import datetime, timedelta
@@ -24,133 +25,118 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 base_directory='/home/rvalenzuela/SPROF/matfiles'
 
-reqdates={ '1': {'ini':[1998,1,18,15],'end':[1998,1,18,20]},
-			'2': {'ini':[1998,1,26,4],'end':[1998,1,26,9]},
-			'3': {'ini':[2001,1,23,21],'end':[2001,1,24,2]},
-			'4': {'ini':[2001,1,25,15],'end':[2001,1,25,20]},
-			'5': {'ini':[2001,2,9,10],'end':[2001,2,9,15]},
-			'6': {'ini':[2001,2,11,3],'end':[2001,2,11,8]},
-			'7': {'ini':[2001,2,17,17],'end':[2001,2,17,22]},
-			'8': {'ini':[2003,1,12,15],'end':[2003,1,12,20]},
-			'9': {'ini':[2003,1,22,18],'end':[2003,1,22,23]},
-			'10': {'ini':[2003,2,16,0],'end':[2003,2,16,5]},
-			'11': {'ini':[2004,1,9,17],'end':[2004,1,9,22]},
-			'12': {'ini':[2004,2,2,12],'end':[2004,2,2,17]},
-			'13': {'ini':[2004,2,17,14],'end':[2004,2,17,19]},
-			'14': {'ini':[2004,2,25,8],'end':[2004,2,25,13]}
-			}
-
 ' global variables used in plot_profile_variance'
 ti=[] # title list
 n=0 # line counter
 colors=[] #color list
 
-def main():
+def main(plot=False):
 
-	# casenum = raw_input('\nIndicate case number (i.e. 1): ')
-	# dbz,vvel,ht,ts,ts2,dayt = get_arrays(casenum)
-	# plot_turbulence_spectra(dbz,vvel,ts,ts2,ht,dayt)
-	
-	' Time-height sections '
-	'*********************************'
-	# thrs=0
-	# dbz,vvel,ht,ts,ts2,dayt = get_arrays('3')
-	# dbz[dbz<thrs]=np.nan
-	# plot_thsections(dbz,vvel,ts,ts2,ht,dayt)
-	# dbz,vvel,ht,ts,ts2,dayt = get_arrays('4')
-	# dbz[dbz<thrs]=np.nan
-	# plot_thsections(dbz,vvel,ts,ts2,ht,dayt)
+	if plot:
 
-
-	' Profile variance '
-	'*********************************'
-	# # ncases = range(1,15)
-	# ncases = range(1,8)
-	# # ncases = range(8,15)
-	# # ncases = [1,2,3]
-	# thrs=0
-	# for c in ncases:
-	# 	dbz,vvel,ht,_,_,_ = get_arrays(str(c))
-	# 	idx = np.where(ht<3.75)[0]
-	# 	dbz[dbz<thrs]=np.nan		
-	# 	if c == ncases[0]:
-	# 		ax=plot_profile_variance(dbz[idx,:],vvel[idx,:],ht[idx],False,str(c),len(ncases))
-	# 	else:
-	# 		plot_profile_variance(dbz[idx,:],vvel[idx,:],ht[idx],ax,str(c),len(ncases))
-
-	' Echo-top '
-	'*********************************'
-	# # ncases=range(1,15)
-	# ncases=[1]
-	# for c in ncases:
-	# 	dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
-	# 	with np.errstate(invalid='ignore'):
-	# 		dbz[dbz<0]=np.nan
-	# 	echot = timeserie_echotop(dbz,ht,plot=False,retrieve='km')
-	# 	print 'Echotop variance case' + str(c)+': {:2.1f}'.format(np.nanvar(echot))
-	# 	echot = timeserie_echotop(dbz,ht,plot=False,retrieve='index')		
-	# 	plot_thsections(dbz,vvel,ht,dayt,echotop=echot)
-	# plt.show(block=False)
-
-	' Print single panels to pdf'
-	'*******************************'
-	ppdbz=PdfPages('sprof_dbz_multipage.pdf')
-	ppvvel=PdfPages('sprof_vvel_multipage.pdf')
-	ncases=range(1,15)
-	# ncases=[1,2,3]
-	for c in ncases:
-		dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
-		# with np.errstate(invalid='ignore'):
-		# 	dbz[dbz<0]=np.nan		
-		if c==3:
-			cbar=True
-		else:
-			cbar=False
-		echoti = timeserie_echotop(dbz,ht,plot=False,retrieve='index')		
-		echotm = timeserie_echotop(dbz,ht,plot=False,retrieve='km')
-		partition=read_partition.partition(dayt[0].year)
-		bbht,bbtimeidx=partition.get_bbht(time=dayt)
-		plot_thsections_single(ht,dayt,dbz=dbz,colorbar=cbar,case=c,echotop=[echoti,echotm], bband=[bbht, bbtimeidx])
-		ppdbz.savefig()
-		plot_thsections_single(ht,dayt,vvel=vvel,colorbar=cbar,case=c,echotop=[echoti,echotm], bband=[bbht, bbtimeidx])
-		ppvvel.savefig()
-		plt.close('all')
-	ppdbz.close()
-	ppvvel.close()
-
-	' Layer variance '
-	'**********************'
-	# for c in range(1,15):
-	# 	dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
-	# 	partition=read_partition.partition(dayt[0].year)
-	# 	bbht,bbtimeidx=partition.get_bbht(time=dayt)
-	# 	center = np.nanmax(bbht)+1.0
-	# 	lin_var,log_var=layer_average(dbz,ht,center=center)
-	# 	str1=', center = '+'{:3.1f}'.format(center)
-	# 	str2=' lin var = {:6d}, log var = {:5.1f}'.format(int(lin_var/1000.),log_var)
-	# 	print 'case '+str(c).zfill(2)+str1+str2
+		# casenum = raw_input('\nIndicate case number (i.e. 1): ')
+		# dbz,vvel,ht,ts,ts2,dayt = get_arrays(casenum)
+		# plot_turbulence_spectra(dbz,vvel,ts,ts2,ht,dayt)
+		
+		' Time-height sections '
+		'*********************************'
+		# thrs=0
+		# dbz,vvel,ht,ts,ts2,dayt = get_arrays('3')
+		# dbz[dbz<thrs]=np.nan
+		# plot_thsections(dbz,vvel,ts,ts2,ht,dayt)
+		# dbz,vvel,ht,ts,ts2,dayt = get_arrays('4')
+		# dbz[dbz<thrs]=np.nan
+		# plot_thsections(dbz,vvel,ts,ts2,ht,dayt)
 
 
-	' Print single panels to pdf'
-	'*******************************'
-	# ppdbz=PdfPages('sprof_dbz_cfac_multipage.pdf')
-	# ppvvel=PdfPages('sprof_vvel_cfac_multipage.pdf')
-	# ncases=range(1,15)
-	# # ncases=[3,7]
-	# for c in ncases:
-	# 	dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
+		' Profile variance '
+		'*********************************'
+		# # ncases = range(1,15)
+		# ncases = range(1,8)
+		# # ncases = range(8,15)
+		# # ncases = [1,2,3]
+		# thrs=0
+		# for c in ncases:
+		# 	dbz,vvel,ht,_,_,_ = get_arrays(str(c))
+		# 	idx = np.where(ht<3.75)[0]
+		# 	dbz[dbz<thrs]=np.nan		
+		# 	if c == ncases[0]:
+		# 		ax=plot_profile_variance(dbz[idx,:],vvel[idx,:],ht[idx],False,str(c),len(ncases))
+		# 	else:
+		# 		plot_profile_variance(dbz[idx,:],vvel[idx,:],ht[idx],ax,str(c),len(ncases))
 
-	# 	if c==3:
-	# 		cbar=True
-	# 	else:
-	# 		cbar=False		
-	# 	plot_cfac(dbz=dbz, hgt=ht, case=c,colorbar=cbar)
-	# 	ppdbz.savefig()
-	# 	plot_cfac(vvel=vvel,hgt=ht,case=c,colorbar=cbar)
-	# 	ppvvel.savefig()
-	# 	plt.close('all')
-	# ppdbz.close()
-	# ppvvel.close()
+		' Echo-top '
+		'*********************************'
+		# # ncases=range(1,15)
+		# ncases=[1]
+		# for c in ncases:
+		# 	dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
+		# 	with np.errstate(invalid='ignore'):
+		# 		dbz[dbz<0]=np.nan
+		# 	echot = timeserie_echotop(dbz,ht,plot=False,retrieve='km')
+		# 	print 'Echotop variance case' + str(c)+': {:2.1f}'.format(np.nanvar(echot))
+		# 	echot = timeserie_echotop(dbz,ht,plot=False,retrieve='index')		
+		# 	plot_thsections(dbz,vvel,ht,dayt,echotop=echot)
+		# plt.show(block=False)
+
+		' Print single panels to pdf'
+		'*******************************'
+		# ppdbz=PdfPages('sprof_dbz_significant.pdf')
+		# ppvvel=PdfPages('sprof_vvel_significant.pdf')
+		# ncases=range(1,15)
+		# # ncases=[1,2,3]
+		# for c in ncases:
+		# 	dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
+		# 	# with np.errstate(invalid='ignore'):
+		# 	# 	dbz[dbz<0]=np.nan		
+		# 	if c==3:
+		# 		cbar=True
+		# 	else:
+		# 		cbar=False
+		# 	echoti = timeserie_echotop(dbz,ht,plot=False,retrieve='index')		
+		# 	echotm = timeserie_echotop(dbz,ht,plot=False,retrieve='km')
+		# 	partition=read_partition.partition(dayt[0].year)
+		# 	bbht,bbtimeidx=partition.get_bbht(time=dayt)
+		# 	plot_thsections_single(ht,dayt,dbz=dbz,colorbar=cbar,case=c,echotop=[echoti,echotm], bband=[bbht, bbtimeidx])
+		# 	ppdbz.savefig()
+		# 	plot_thsections_single(ht,dayt,vvel=vvel,colorbar=cbar,case=c,echotop=[echoti,echotm], bband=[bbht, bbtimeidx])
+		# 	ppvvel.savefig()
+		# 	plt.close('all')
+		# ppdbz.close()
+		# ppvvel.close()
+
+		' Layer variance '
+		'**********************'
+		# for c in range(1,15):
+		# 	dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
+		# 	partition=read_partition.partition(dayt[0].year)
+		# 	bbht,bbtimeidx=partition.get_bbht(time=dayt)
+		# 	center = np.nanmax(bbht)+1.0
+		# 	lin_var,log_var=layer_mean(dbz,ht,center=center)
+		# 	str1=', center = '+'{:3.1f}'.format(center)
+		# 	str2=' lin var = {:6d}, log var = {:5.1f}'.format(int(lin_var/1000.),log_var)
+		# 	print 'case '+str(c).zfill(2)+str1+str2
+
+
+		' Print single panels to pdf'
+		'*******************************'
+		ppdbz=PdfPages('sprof_dbz_cfac_signifcant.pdf')
+		ppvvel=PdfPages('sprof_vvel_cfac_significant.pdf')
+		ncases=range(1,15)
+		# ncases=[3,7]
+		for c in ncases:
+			dbz,vvel,ht,ts,ts2,dayt = get_arrays(str(c))
+			if c==3:
+				cbar=True
+			else:
+				cbar=False		
+			plot_cfac(dbz=dbz, hgt=ht, case=c,colorbar=cbar)
+			ppdbz.savefig()
+			plot_cfac(vvel=vvel,hgt=ht,case=c,colorbar=cbar)
+			ppvvel.savefig()
+			plt.close('all')
+		ppdbz.close()
+		ppvvel.close()
 
 def plot_cfac(**kwargs):
 
@@ -190,15 +176,34 @@ def plot_cfac(**kwargs):
 	plt.subplots_adjust(top=0.98, bottom=0.05,left=0.04, right=0.93)
 	plt.draw()
 
-def layer_average(data, ht, depth=1.0, center=1.5,plot=False):
+def layer_mean(vvel=None,dbz=None, height=None, depth=1.0, 
+					center=False,bottom=False,plot=False,variance=False):
 
-	idx=np.where( (ht>center-depth/2) & (ht<center+depth/2))
-	data_layer=data[idx,:][0]
-	data_layer_linear=np.power(10,data_layer/10.)
-	linear_mean=np.nanmean(data_layer_linear,axis=0)
-	lin_varian=np.nanvar(linear_mean)
-	log_mean=np.nanmean(data_layer,axis=0)
-	log_varian=np.nanvar(log_mean)
+	ht=height
+	
+	if center:
+		idx=np.where( (ht>center-depth/2) & (ht<center+depth/2))
+
+	if is_numeric(bottom):
+		idx=np.where( ht>bottom)
+
+	if is_numeric(dbz):
+		data=dbz
+		data_layer=data[idx,:][0]
+		data_layer_linear=np.power(10,data_layer/10.)
+		linear_mean=np.nanmean(data_layer_linear,axis=0)
+		lin_varian=np.nanvar(linear_mean)
+		log_mean=np.nanmean(data_layer,axis=0)
+		log_varian=np.nanvar(log_mean)		
+	
+	if is_numeric(vvel):
+		data=vvel
+		data_layer=data[idx,:][0]
+		linear_mean=np.nanmean(data_layer,axis=0)
+		lin_varian=np.nanvar(linear_mean)
+		log_mean=np.copy(linear_mean)
+		log_mean[:]=np.nan
+		log_varian=np.nan
 
 	if plot:
 		' setup new figure '	
@@ -229,16 +234,19 @@ def layer_average(data, ht, depth=1.0, center=1.5,plot=False):
 		ax2.invert_xaxis()
 		plt.show(block=False)
 
-	return lin_varian,log_varian
-
+	if variance :
+		return lin_varian,log_varian
+	else:
+		return linear_mean,log_mean	
 	
+
 def plot_thsections_single(ht,dayt,**kwargs):
 
 	matplotlib.rcParams.update({'font.size':20})
 	fig,ax = plt.subplots()
 	str_etop=''
 	if 'dbz' in kwargs:
-		im=ax.imshow(kwargs['dbz'],interpolation='none',cmap='nipy_spectral',vmin=-20,vmax=60,aspect='auto',origin='lower')
+		im=ax.imshow(kwargs['dbz'],interpolation='none',cmap='nipy_spectral',vmin=-30,vmax=60,aspect='auto',origin='lower')
 	elif 'vvel' in kwargs:
 		orig_cmap = cm.bwr
 		shifted_cmap = shiftedColorMap(orig_cmap, midpoint=0.7, name='shifted')
@@ -262,7 +270,7 @@ def plot_thsections_single(ht,dayt,**kwargs):
 		cbar = plt.colorbar(im, cax=cax)
 
 	format_yaxis(ax,ht,toplimit=11)
-	format_xaxis(ax, dayt, minutes_tick=30, labels=False)
+	format_xaxis(ax, dayt, labels=True,format='%H')
 	ax.invert_xaxis()
 
 	str_date=dayt[0].strftime('%Y-%b')
@@ -271,7 +279,7 @@ def plot_thsections_single(ht,dayt,**kwargs):
 	c=kwargs['case']
 	annot='Case '+str(c)+' '+str_date+str_tbeg+str_tend+' UTC'+' '+str_etop
 	ax.text(0.02,0.02,annot,transform=ax.transAxes,fontsize=14)
-	plt.subplots_adjust(top=0.98, bottom=0.02,left=0.04, right=0.91)
+	plt.subplots_adjust(top=0.98, bottom=0.05,left=0.04, right=0.91)
 	plt.draw()
 
 def timeserie_echotop(dbz,ht,plot,retrieve):
@@ -281,7 +289,8 @@ def timeserie_echotop(dbz,ht,plot,retrieve):
 	h=ht[::-1]
 	for c in range(cols):
 		prof = dbz[::-1,c]
-		idx, val = next(((n,v) for (n,v) in enumerate(prof) if v>=10.), (False, np.nan))
+		thres_dbz=10.
+		idx, val = next(((n,v) for (n,v) in enumerate(prof) if v>=thres_dbz), (False, np.nan))
 		if idx:
 			if retrieve == 'index':
 				echotop.append(len(h)-idx)
@@ -292,7 +301,7 @@ def timeserie_echotop(dbz,ht,plot,retrieve):
 
 	# ma=np.asarray(echotop)
 	ma = moving_average(echotop,5)
-	ma= np.around(ma,decimals=0)
+	ma= np.around(ma,decimals=2)
 	' remove edge values'
 	ma[0:2]=np.nan
 	ma[-3:-1]=np.nan
@@ -542,8 +551,9 @@ def get_arrays(casenum):
 
 	dbz,vvel, ht, dayt = read_sprof.retrieve_arrays(base_directory, casenum)
 
-	idx_st=find_index(dayt,reqdates[casenum]['ini'])
-	idx_end=find_index(dayt,reqdates[casenum]['end'])
+	reqdates = precip.request_dates_significant(casenum)
+	idx_st=find_index(dayt,reqdates['ini'])
+	idx_end=find_index(dayt,reqdates['end'])
 
 	dayt=dayt[idx_st:idx_end+1]
 	vvel=vvel[:,idx_st:idx_end+1]

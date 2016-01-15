@@ -55,12 +55,9 @@ def find_index(datetime_array, t):
 
 	return idx[0][0]
 
-def format_xaxis(ax,time,**kwargs):
+def format_xaxis(ax,time,labels=False,format=None,freqMin=30):
 
-	freqMin=kwargs['minutes_tick']
-	labels=kwargs['labels']
-	# print time
-	date_fmt='%d\n%H'
+	date_fmt=format
 	xtlabel=[]
 	new_xticks=[]
 
@@ -74,6 +71,14 @@ def format_xaxis(ax,time,**kwargs):
 			hrbool.append(True)
 			d0=d.hour
 	idxhr = np.where(hrbool)[0]
+	# print len(idxhr)
+	if len(idxhr)>30:
+		idxhr=idxhr[::4]
+		freqMin=60
+	elif len(idxhr)>10:
+		idxhr=idxhr[::2]
+		freqMin=60
+
 
 	if time[0].year == 1998:
 		choose=[0,1,2]
@@ -174,3 +179,7 @@ def shiftedColorMap(cmap, start=0, midpoint=0.5, stop=1.0, name='shiftedcmap'):
     plt.register_cmap(cmap=newcmap)
 
     return newcmap
+
+def is_numeric(obj):
+	attrs=['__add__', '__sub__','__mul__','__div__','__pow__' ]
+	return all(hasattr(obj,attr) for attr in attrs)

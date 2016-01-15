@@ -25,7 +25,8 @@ base_directory='/home/rvalenzuela/SPROF/matfiles'
 	reqdates = [yyyy, m, d, H]'''
 reqdates={ '1': {'ini':[1998,1,18,14],'end':[1998,1,19,23]},
 			'2': {'ini':[1998,1,26,0],'end':[1998,1,27,4]},
-			'3': {'ini':[2001,1,23,21],'end':[2001,1,24,1]},
+			'3': {'ini':[2001,1,23,20],'end':[2001,1,23,22]},
+			'5': {'ini':[2001,2,9,13],'end':[2001,2,9,15]},
 			'7': {'ini':[2001,2,17,17],'end':[2001,2,17,19]},
 			'8': {'ini':[2003,1,12,0],'end':[2003,1,13,0]},
 			'9': {'ini':[2003,1,21,0],'end':[2003,1,23,5]},
@@ -99,7 +100,7 @@ def main():
 
 	' it has to be before set_xlim'
 	# format_xaxis(ax[1],dayt,2,casenum)
-	format_xaxis(ax[1],dayt,minutes_tick=60,labels=True)
+	format_xaxis(ax[1],dayt,labels=True,format='%d\n%H')
 
 	ax[0].set_xlim([idx_st,idx_end])
 	ax[0].set_ylim([-10,len(ht)])
